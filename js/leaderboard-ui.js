@@ -187,7 +187,7 @@ class LeaderboardUI {
 				errorDiv.textContent = '';
 
 				try {
-					await leaderboardManager.saveScore(playerName, score);
+					await leaderboardManager.saveScore(playerName, moveLog);
 					modal.remove();
 					resolve(true);
 				} catch (error) {

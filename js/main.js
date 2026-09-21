@@ -1,7 +1,11 @@
 let gameOver = false;
 let gameWon = false;
 
-function initGame() {
+let gameInitId = 0;
+
+async function initGame() {
+	const initId = ++gameInitId;
+
 	// Limpiar overlays si existen
 	const overlays = document.querySelectorAll('.game-over-overlay');
 	overlays.forEach(overlay => overlay.remove());
@@ -14,6 +18,7 @@ function initGame() {
 	];
 
 	score = 0;
+	moveLog = '';
 	gameOver = false;
 	gameWon = false;
 	initTileGrid();
@@ -21,6 +26,11 @@ function initGame() {
 
 	// IMPORTANTE: Renderizar primero para crear las celdas de fondo
 	renderTiles();
+
+	// Pedir al servidor la semilla de la partida antes de colocar fichas
+	const seed = await leaderboardManager.startGame();
+	if (initId !== gameInitId) return; // Se reinició mientras esperábamos
+	rng = seed !== null ? createSeededRandom(seed) : Math.random;
 
 	// Luego añadir las fichas iniciales
 	addRandomTile();

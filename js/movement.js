@@ -60,6 +60,7 @@ function moveUp() {
       }
     }
   }
+  if (moved) recordMove('U');
   return moved;
 }
 
@@ -98,6 +99,7 @@ function moveDown() {
     }
   }
 
+  if (moved) recordMove('D');
   return moved;
 }
 
@@ -136,6 +138,7 @@ function moveRight() {
     }
   }
 
+  if (moved) recordMove('R');
   return moved;
 }
 
@@ -167,6 +170,7 @@ function moveLeft() {
       }
     }
   }
+  if (moved) recordMove('L');
   return moved;
 }
 

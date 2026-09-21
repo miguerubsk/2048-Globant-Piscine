@@ -1,6 +1,40 @@
 class LeaderboardManager {
 	constructor(apiBaseUrl) {
 		this.apiBaseUrl = apiBaseUrl || '/api';
+		this.gameToken = null;
+	}
+
+	/**
+	 * Inicia una partida en el servidor
+	 * @returns {Promise<number|null>} Semilla de la partida, o null si falla
+	 * (se puede jugar, pero la puntuación no se podrá guardar)
+	 */
+	async startGame() {
+		this.gameToken = null;
+		try {
+			const response = await fetch(`${this.apiBaseUrl}/start_game.php`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (data.success) {
+				this.gameToken = data.data.token;
+				return data.data.seed;
+			} else {
+				throw new Error(data.error || 'Error al iniciar la partida');
+			}
+		} catch (error) {
+			console.error('Error starting game:', error);
+			return null;
+		}
 	}
 
 	/**
@@ -35,12 +69,17 @@ class LeaderboardManager {
 
 	/**
 	 * Guarda una nueva puntuación en el leaderboard
+	 * El servidor calcula la puntuación repitiendo los movimientos de la partida
 	 * @param {string} playerName - Nombre del jugador
-	 * @param {number} score - Puntuación obtenida
+	 * @param {string} moves - Movimientos de la partida (L, R, U, D)
 	 * @returns {Promise<Object>} Información sobre la puntuación guardada
 	 */
-	async saveScore(playerName, score) {
+	async saveScore(playerName, moves) {
 		try {
+			if (!this.gameToken) {
+				throw new Error('This game cannot be saved (no game session)');
+			}
+
 			const response = await fetch(`${this.apiBaseUrl}/save_score.php`, {
 				method: 'POST',
 				headers: {
@@ -48,17 +87,20 @@ class LeaderboardManager {
 				},
 				body: JSON.stringify({
 					player_name: playerName,
-					score: score
+					game_token: this.gameToken,
+					moves: moves
 				})
 			});
 
-			if (!response.ok) {
+			const data = await response.json().catch(() => ({}));
+
+			if (!response.ok && !data.error) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-			const data = await response.json();
-
 			if (data.success) {
+				// El token es de un solo uso
+				this.gameToken = null;
 				return data.data;
 			} else {
 				throw new Error(data.error || 'Error al guardar la puntuación');
